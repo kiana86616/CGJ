@@ -74,7 +74,7 @@ public class PlayerAnchorLaunchState : PlayerState
         // 发射期间保持静止
         if (!hasLaunched)
         {
-            rb.linearVelocity = Vector2.zero;
+            rb.velocity = Vector2.zero;
         }
     }
 
@@ -124,7 +124,7 @@ public class PlayerAnchorLaunchState : PlayerState
         }
 
         anchorRb.gravityScale = anchorGravityScale;
-        anchorRb.linearVelocity = launchDirection * launchForce;
+        anchorRb.velocity = launchDirection * launchForce;
 
         // 给锚添加旋转效果
         anchorRb.angularVelocity = 360f * Mathf.Sign(launchDirection.x);
