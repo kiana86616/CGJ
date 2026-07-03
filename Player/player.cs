@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class player : MonoBehaviour
 {
-<<<<<<< Updated upstream
+
     private PlayerStateMachine stateMachine;
     // 公开组件引用，供状态类使用
     public Rigidbody2D rb{ get; private set;}
@@ -29,7 +29,6 @@ public class player : MonoBehaviour
     void FixedUpdate()
     {
         stateMachine?.FixedUpdate();
-=======
     // Start is called before the first frame update
     void Start()
     {
@@ -40,6 +39,6 @@ public class player : MonoBehaviour
     void Update()
     {
         
->>>>>>> Stashed changes
     }
+}
 }
