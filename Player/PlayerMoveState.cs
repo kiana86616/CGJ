@@ -1,17 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// 移动状态 —— 玩家根据输入进行移动。
-/// 条件：有移动输入 → 持续移动
-///       无移动输入 → 切换到静止状态
+/// 移动状态 —— 玩家根据输入进行水平移动，保留垂直速度。
 /// </summary>
 public class PlayerMoveState : PlayerState
 {
-    [SerializeField] private float moveSpeed = 5f;
+    private float moveSpeed = 5f; // 可改为从 player 获取
 
     private float moveInputX;
     private float moveInputY;
-    private Vector2 moveDirection;
 
     public PlayerMoveState(PlayerStateMachine stateMachine, player player)
         : base(stateMachine, player, "move")
@@ -29,12 +26,11 @@ public class PlayerMoveState : PlayerState
     {
         base.OnFixedUpdate();
 
-        // 获取输入方向
         moveInputX = Input.GetAxisRaw("Horizontal");
-        moveDirection = new Vector2(moveInputX, player.rb.velocity.y).normalized;
-
-        // 应用移动
-        player.rb.velocity = moveDirection * moveSpeed;
+        // 只修改 X 轴速度，Y 轴保持物理模拟（重力）不受干扰
+        Vector2 velocity = player.rb.velocity;
+        velocity.x = moveInputX * moveSpeed;
+        player.rb.velocity = velocity;
     }
 
     public override void OnExit()
@@ -48,13 +44,14 @@ public class PlayerMoveState : PlayerState
         moveInputX = Input.GetAxisRaw("Horizontal");
         moveInputY = Input.GetAxisRaw("Vertical");
 
+        // 判断是否有移动输入
         if (Mathf.Abs(moveInputX) < 0.01f && Mathf.Abs(moveInputY) < 0.01f)
         {
             stateMachine.ChangeState(new PlayerIdleState(stateMachine, player));
             return;
         }
 
-        // 检测瞄准输入（右键进入瞄准）
+        // 瞄准输入（右键）
         if (Input.GetButtonDown("Fire2"))
         {
             stateMachine.ChangeState(new PlayerAnchorAimState(stateMachine, player));
