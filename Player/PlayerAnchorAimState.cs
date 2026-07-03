@@ -1,23 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// 扔锚-瞄准状态 —— 玩家进入瞄准模式，选择锚的投掷方向。
-/// 条件：按瞄准键 → 进入瞄准
-///       按发射键 → 切换到发射状态
-///       按取消键 → 返回静止/移动状态
+/// 锚链状态：右键进入瞄准，左键发射，MixTime 冷却后返回 idle/move。
 /// </summary>
 public class PlayerAnchorAimState : PlayerState
 {
-    // 瞄准相关
+    private enum Phase { Aiming, Cooldown }
+
+    private Phase phase;
     private Vector2 aimDirection;
-    private Vector3 mouseWorldPosition;
     private Camera mainCamera;
-
-    // 输入
-    private bool launchPressed;
-    private bool cancelPressed;
-
-    // 输入缓冲：防止进入瞄准的同一帧就退出
+    private AnchorChain launchedChain;
+    private float cooldownTimer;
     private readonly float aimBufferTime = 0.15f;
     private float aimBufferTimer;
 
@@ -29,87 +23,101 @@ public class PlayerAnchorAimState : PlayerState
     public override void OnEnter()
     {
         base.OnEnter();
-
-        // 进入瞄准时停止移动
-        player.rb.velocity = Vector2.zero;
-
-        // 缓存主摄像机引用
+        phase = Phase.Aiming;
+        aimDirection = Vector2.right;
+        aimBufferTimer = 0f;
         mainCamera = Camera.main;
 
-        // 初始化瞄准方向（默认朝右）
-        aimDirection = Vector2.right;
-
-        // 重置缓冲计时器，防止同一帧按键触发退出
-        aimBufferTimer = 0f;
-
+        player.rb.velocity = Vector2.zero;
         player.anim?.Play("aim");
-        Debug.Log("[PlayerAnchorAimState] 进入瞄准状态");
     }
 
     public override void OnUpdate()
     {
-        aimBufferTimer += Time.deltaTime;
-
-        // 缓冲期内不检测状态切换
-        if (aimBufferTimer >= aimBufferTime)
+        if (phase == Phase.Aiming)
         {
-            base.OnUpdate();
+            aimBufferTimer += Time.deltaTime;
+            UpdateAimDirection();
+            if (aimBufferTimer >= aimBufferTime)
+                HandleAimingTransition();
         }
+        else
+        {
+            cooldownTimer += Time.deltaTime;
+            if (player.ActiveChain != null && player.ActiveChain.HasAttached)
+                return;
 
-        UpdateAimDirection();
+            if (cooldownTimer >= player.MixTime)
+                ExitToLocomotionState();
+        }
     }
 
-    public override void OnExit()
+    public override void OnFixedUpdate()
     {
-        base.OnExit();
-        Debug.Log("[PlayerAnchorAimState] 退出瞄准状态");
+        if (phase == Phase.Cooldown)
+            player.rb.velocity = Vector2.zero;
     }
 
-    /// <summary>
-    /// 根据鼠标位置更新瞄准方向
-    /// </summary>
     private void UpdateAimDirection()
     {
         if (mainCamera == null)
-        {
             mainCamera = Camera.main;
-            if (mainCamera == null) return;
-        }
+        if (mainCamera == null)
+            return;
 
-        // 获取鼠标在世界空间中的位置
-        mouseWorldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorldPosition.z = 0f;
+        Vector2 mouseWorld = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 toMouse = mouseWorld - (Vector2)player.transform.position;
+        aimDirection = toMouse.sqrMagnitude > 0.0001f ? toMouse.normalized : Vector2.right;
 
-        // 计算玩家朝向鼠标的方向
-        Vector2 playerPosition = player.transform.position;
-        aimDirection = ((Vector2)mouseWorldPosition - playerPosition).normalized;
-
-        // 可视：在 Scene 视图中绘制瞄准线
-        Debug.DrawRay(player.transform.position, aimDirection * 3f, Color.red);
+        Debug.DrawLine(player.transform.position, (Vector2)player.transform.position + aimDirection * player.AnchorChainMaxLength, Color.red);
     }
 
-    protected override void HandleTransition()
+    private void HandleAimingTransition()
     {
-        // 检测发射输入（左键 / Fire1）
-        launchPressed = Input.GetButtonDown("Fire1");
-
-        // 检测取消输入（右键 / Fire2 再次按下，或 Escape）
-        cancelPressed = Input.GetButtonDown("Fire2") || Input.GetKeyDown(KeyCode.Escape);
-
-        if (launchPressed)
+        if (Input.GetButtonDown("Fire2") || Input.GetKeyDown(KeyCode.Escape))
         {
-            stateMachine.ChangeState(new PlayerAnchorLaunchState(stateMachine, player, aimDirection));
-            return;
-        }
-
-        if (cancelPressed)
-        {
-            // 取消瞄准，返回静止状态
             stateMachine.ChangeState(new PlayerIdleState(stateMachine, player));
             return;
         }
+
+        if (!Input.GetButtonDown("Fire1") || !player.CanLaunchAnchor())
+            return;
+
+        FireChain();
     }
 
-    /// <summary>获取当前瞄准方向（供外部读取）</summary>
-    public Vector2 GetAimDirection() => aimDirection;
+    private void FireChain()
+    {
+        if (aimDirection.x != 0)
+        {
+            player.transform.localScale = new Vector3(
+                Mathf.Sign(aimDirection.x) * Mathf.Abs(player.transform.localScale.x),
+                player.transform.localScale.y,
+                player.transform.localScale.z);
+        }
+
+        player.anim?.Play("launch");
+        launchedChain = player.SpawnChain(aimDirection);
+        if (launchedChain == null)
+            return;
+
+        if (launchedChain.HasAttached)
+            return;
+
+        phase = Phase.Cooldown;
+        cooldownTimer = 0f;
+    }
+
+    private void ExitToLocomotionState()
+    {
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveY = Input.GetAxisRaw("Vertical");
+
+        if (Mathf.Abs(moveX) > 0.01f || Mathf.Abs(moveY) > 0.01f)
+            stateMachine.ChangeState(new PlayerMoveState(stateMachine, player));
+        else
+            stateMachine.ChangeState(new PlayerIdleState(stateMachine, player));
+    }
+
+    protected override void HandleTransition() { }
 }
