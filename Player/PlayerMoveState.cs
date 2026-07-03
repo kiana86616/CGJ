@@ -31,8 +31,7 @@ public class PlayerMoveState : PlayerState
 
         // 获取输入方向
         moveInputX = Input.GetAxisRaw("Horizontal");
-        moveInputY = Input.GetAxisRaw("Vertical");
-        moveDirection = new Vector2(moveInputX, moveInputY).normalized;
+        moveDirection = new Vector2(moveInputX, player.rb.velocity.y).normalized;
 
         // 应用移动
         player.rb.velocity = moveDirection * moveSpeed;
