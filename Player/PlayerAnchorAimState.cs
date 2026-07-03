@@ -31,7 +31,7 @@ public class PlayerAnchorAimState : PlayerState
         base.OnEnter();
 
         // 进入瞄准时停止移动
-        rb.linearVelocity = Vector2.zero;
+        rb.velocity = Vector2.zero;
 
         // 缓存主摄像机引用
         mainCamera = Camera.main;
