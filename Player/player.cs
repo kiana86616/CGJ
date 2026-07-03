@@ -9,8 +9,8 @@ public class player : MonoBehaviour
     private PlayerStateMachine stateMachine;
 
     // 公开组件引用，供状态类使用
-    public Rigidbody2D Rb => rb;
-    public Animator Anim => anim;
+    public Rigidbody2D rb{ get; private set;}
+    public Animator anim{ get; private set;}
 
     void Start()
     {
