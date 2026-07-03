@@ -20,20 +20,14 @@ public class PlayerStateMachine
     {
         CurrentState = startState;
         CurrentState?.OnEnter();
-        Debug.Log($"[PlayerStateMachine] 初始化 → {CurrentStateName}");
     }
 
-    /// <summary>切换到新状态</summary>
     public void ChangeState(PlayerState newState)
     {
         if (newState == null)
-        {
-            Debug.LogError("[PlayerStateMachine] 尝试切换到空状态！");
             return;
-        }
 
         CurrentState?.OnExit();
-        Debug.Log($"[PlayerStateMachine] {CurrentStateName} → {newState.StateName}");
         CurrentState = newState;
         CurrentState.OnEnter();
     }
