@@ -7,8 +7,7 @@ public abstract class PlayerState
 {
     protected PlayerStateMachine stateMachine;
     protected player player;
-    protected Rigidbody2D rb;
-    protected Animator anim;
+
 
     /// <summary>状态名称，方便调试</summary>
     public string StateName { get; protected set; }
@@ -17,8 +16,6 @@ public abstract class PlayerState
     {
         this.stateMachine = stateMachine;
         this.player = player;
-        this.rb = player.rb;
-        this.anim = player.anim;
         this.StateName = stateName;
     }
 
