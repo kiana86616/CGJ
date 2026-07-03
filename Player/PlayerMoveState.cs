@@ -14,14 +14,14 @@ public class PlayerMoveState : PlayerState
     private Vector2 moveDirection;
 
     public PlayerMoveState(PlayerStateMachine stateMachine, player player)
-        : base(stateMachine, player, "Move")
+        : base(stateMachine, player, "move")
     {
     }
 
     public override void OnEnter()
     {
         base.OnEnter();
-        anim?.Play("Move");
+        player.anim?.Play("move");
         Debug.Log("[PlayerMoveState] 进入移动状态");
     }
 
@@ -31,11 +31,10 @@ public class PlayerMoveState : PlayerState
 
         // 获取输入方向
         moveInputX = Input.GetAxisRaw("Horizontal");
-        moveInputY = Input.GetAxisRaw("Vertical");
-        moveDirection = new Vector2(moveInputX, moveInputY).normalized;
+        moveDirection = new Vector2(moveInputX, player.rb.velocity.y).normalized;
 
         // 应用移动
-        rb.velocity = moveDirection * moveSpeed;
+        player.rb.velocity = moveDirection * moveSpeed;
     }
 
     public override void OnExit()

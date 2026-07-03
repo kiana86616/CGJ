@@ -31,7 +31,7 @@ public class PlayerAnchorAimState : PlayerState
         base.OnEnter();
 
         // 进入瞄准时停止移动
-        rb.velocity = Vector2.zero;
+        player.rb.velocity = Vector2.zero;
 
         // 缓存主摄像机引用
         mainCamera = Camera.main;
@@ -42,7 +42,7 @@ public class PlayerAnchorAimState : PlayerState
         // 重置缓冲计时器，防止同一帧按键触发退出
         aimBufferTimer = 0f;
 
-        anim?.Play("AnchorAim");
+        player.anim?.Play("aim");
         Debug.Log("[PlayerAnchorAimState] 进入瞄准状态");
     }
 

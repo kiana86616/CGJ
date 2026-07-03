@@ -39,7 +39,7 @@ public class PlayerAnchorLaunchState : PlayerState
         launchTimer = 0f;
 
         // 播放发射动画
-        anim?.Play("AnchorLaunch");
+        player.anim?.Play("launch");
 
         // 翻转角色朝向发射方向
         if (launchDirection.x != 0)
@@ -74,7 +74,7 @@ public class PlayerAnchorLaunchState : PlayerState
         // 发射期间保持静止
         if (!hasLaunched)
         {
-            rb.velocity = Vector2.zero;
+            player.rb.velocity = Vector2.zero;
         }
     }
 
