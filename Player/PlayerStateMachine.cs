@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayerStateMachine
 {
     public PlayerState CurrentState { get; private set; }
-    public string CurrentStateName => CurrentState?.StateName ?? "None";
+    public string CurrentStateName => CurrentState?.StateName;
 
     private player player;
 
