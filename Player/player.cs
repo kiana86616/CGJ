@@ -4,10 +4,7 @@ using UnityEngine;
 
 public class player : MonoBehaviour
 {
-    private Rigidbody2D rb;
-    private Animator anim;
     private PlayerStateMachine stateMachine;
-
     // 公开组件引用，供状态类使用
     public Rigidbody2D rb{ get; private set;}
     public Animator anim{ get; private set;}
