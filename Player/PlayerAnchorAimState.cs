@@ -17,8 +17,9 @@ public class PlayerAnchorAimState : PlayerState
     private bool launchPressed;
     private bool cancelPressed;
 
-    // 瞄准灵敏度
-    private float aimSensitivity = 1f;
+    // 输入缓冲：防止进入瞄准的同一帧就退出
+    private readonly float aimBufferTime = 0.15f;
+    private float aimBufferTimer;
 
     public PlayerAnchorAimState(PlayerStateMachine stateMachine, player player)
         : base(stateMachine, player, "AnchorAim")
@@ -38,13 +39,23 @@ public class PlayerAnchorAimState : PlayerState
         // 初始化瞄准方向（默认朝右）
         aimDirection = Vector2.right;
 
+        // 重置缓冲计时器，防止同一帧按键触发退出
+        aimBufferTimer = 0f;
+
         anim?.Play("AnchorAim");
         Debug.Log("[PlayerAnchorAimState] 进入瞄准状态");
     }
 
     public override void OnUpdate()
     {
-        base.OnUpdate();
+        aimBufferTimer += Time.deltaTime;
+
+        // 缓冲期内不检测状态切换
+        if (aimBufferTimer >= aimBufferTime)
+        {
+            base.OnUpdate();
+        }
+
         UpdateAimDirection();
     }
 
