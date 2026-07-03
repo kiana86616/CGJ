@@ -35,7 +35,7 @@ public class PlayerMoveState : PlayerState
         moveDirection = new Vector2(moveInputX, moveInputY).normalized;
 
         // 应用移动
-        rb.linearVelocity = moveDirection * moveSpeed;
+        rb.velocity = moveDirection * moveSpeed;
     }
 
     public override void OnExit()
