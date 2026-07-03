@@ -1,0 +1,104 @@
+using UnityEngine;
+
+/// <summary>
+/// 扔锚-瞄准状态 —— 玩家进入瞄准模式，选择锚的投掷方向。
+/// 条件：按瞄准键 → 进入瞄准
+///       按发射键 → 切换到发射状态
+///       按取消键 → 返回静止/移动状态
+/// </summary>
+public class PlayerAnchorAimState : PlayerState
+{
+    // 瞄准相关
+    private Vector2 aimDirection;
+    private Vector3 mouseWorldPosition;
+    private Camera mainCamera;
+
+    // 输入
+    private bool launchPressed;
+    private bool cancelPressed;
+
+    // 瞄准灵敏度
+    private float aimSensitivity = 1f;
+
+    public PlayerAnchorAimState(PlayerStateMachine stateMachine, player player)
+        : base(stateMachine, player, "AnchorAim")
+    {
+    }
+
+    public override void OnEnter()
+    {
+        base.OnEnter();
+
+        // 进入瞄准时停止移动
+        rb.linearVelocity = Vector2.zero;
+
+        // 缓存主摄像机引用
+        mainCamera = Camera.main;
+
+        // 初始化瞄准方向（默认朝右）
+        aimDirection = Vector2.right;
+
+        anim?.Play("AnchorAim");
+        Debug.Log("[PlayerAnchorAimState] 进入瞄准状态");
+    }
+
+    public override void OnUpdate()
+    {
+        base.OnUpdate();
+        UpdateAimDirection();
+    }
+
+    public override void OnExit()
+    {
+        base.OnExit();
+        Debug.Log("[PlayerAnchorAimState] 退出瞄准状态");
+    }
+
+    /// <summary>
+    /// 根据鼠标位置更新瞄准方向
+    /// </summary>
+    private void UpdateAimDirection()
+    {
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+            if (mainCamera == null) return;
+        }
+
+        // 获取鼠标在世界空间中的位置
+        mouseWorldPosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPosition.z = 0f;
+
+        // 计算玩家朝向鼠标的方向
+        Vector2 playerPosition = player.transform.position;
+        aimDirection = ((Vector2)mouseWorldPosition - playerPosition).normalized;
+
+        // 可视：在 Scene 视图中绘制瞄准线
+        Debug.DrawRay(player.transform.position, aimDirection * 3f, Color.red);
+    }
+
+    protected override void HandleTransition()
+    {
+        // 检测发射输入（左键 / Fire1）
+        launchPressed = Input.GetButtonDown("Fire1");
+
+        // 检测取消输入（右键 / Fire2 再次按下，或 Escape）
+        cancelPressed = Input.GetButtonDown("Fire2") || Input.GetKeyDown(KeyCode.Escape);
+
+        if (launchPressed)
+        {
+            stateMachine.ChangeState(new PlayerAnchorLaunchState(stateMachine, player, aimDirection));
+            return;
+        }
+
+        if (cancelPressed)
+        {
+            // 取消瞄准，返回静止状态
+            stateMachine.ChangeState(new PlayerIdleState(stateMachine, player));
+            return;
+        }
+    }
+
+    /// <summary>获取当前瞄准方向（供外部读取）</summary>
+    public Vector2 GetAimDirection() => aimDirection;
+}
