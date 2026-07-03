@@ -17,8 +17,8 @@ public abstract class PlayerState
     {
         this.stateMachine = stateMachine;
         this.player = player;
-        this.rb = player.Rb;
-        this.anim = player.Anim;
+        this.rb = player.rb;
+        this.anim = player.anim;
         this.StateName = stateName;
     }
 

@@ -19,7 +19,7 @@ public class PlayerIdleState : PlayerState
     {
         base.OnEnter();
         // 进入静止状态时停止速度
-        rb.linearVelocity = Vector2.zero;
+        rb.velocity = Vector2.zero;
         anim?.Play("Idle");
         Debug.Log("[PlayerIdleState] 进入静止状态");
     }
