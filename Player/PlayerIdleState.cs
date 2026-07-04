@@ -47,8 +47,8 @@ public class PlayerIdleState : PlayerState
             return;
         }
 
-        // 检测瞄准输入（右键进入瞄准）
-        if (Input.GetButtonDown("Fire2"))
+        // 按住左键进入瞄准
+        if (Input.GetButton("Fire1"))
         {
             stateMachine.ChangeState(new PlayerAnchorAimState(stateMachine, player));
             return;
