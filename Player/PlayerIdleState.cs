@@ -48,7 +48,7 @@ public class PlayerIdleState : PlayerState
         }
 
         // 按住左键进入瞄准
-        if (Input.GetButton("Fire1"))
+        if (Input.GetButton("Fire1")&&player.IsGrounded())
         {
             stateMachine.ChangeState(new PlayerAnchorAimState(stateMachine, player));
             return;
