@@ -40,8 +40,7 @@ public class AnchorChain : MonoBehaviour
         isExtending = true;
         isRetracting = false;
 
-        if (anchor != null)
-            anchor.ResetAnchor();
+        anchor?.ResetAnchor();
         UpdateVisuals();
     }
 
@@ -65,11 +64,9 @@ public class AnchorChain : MonoBehaviour
             currentLength = Mathf.Max(hit.distance - attachOffset, 0f);
             Vector2 attachPoint = hit.point + hit.normal * attachOffset;
             isExtending = false;
-            if (anchor != null)
-                anchor.AttachAt(attachPoint, direction);
+            anchor?.AttachAt(attachPoint, direction);
             UpdateVisuals();
-            if (player != null)
-                player.StartAnchorPull(attachPoint, hit.collider);
+            // player?.StartAnchorPull(attachPoint, hit.collider);
             return;
         }
 
@@ -92,8 +89,7 @@ public class AnchorChain : MonoBehaviour
             return;
 
         isRetracting = false;
-        if (player != null)
-            player.ClearActiveChain();
+        // player?.ClearActiveChain();
     }
 
     public void UpdateOrigin(Vector2 newOrigin)
@@ -108,8 +104,7 @@ public class AnchorChain : MonoBehaviour
             ? anchor.Position
             : originPoint + direction * currentLength;
 
-        if (chain != null)
-            chain.SetEndpoints(originPoint, tip);
+        chain?.SetEndpoints(originPoint, tip);
 
         if (anchor != null && !anchor.IsAttached)
             anchor.SetPosition(tip, direction);
