@@ -14,10 +14,6 @@ public class PlayerAnchorAimState : PlayerState
     private Vector3 mouseWorldPosition;
     private Camera mainCamera;
 
-    // 输入
-    private bool launchPressed;
-    private bool cancelPressed;
-
     // 输入缓冲：防止进入瞄准的同一帧就退出
     private readonly float aimBufferTime = 0.15f;
     private float aimBufferTimer;
@@ -61,7 +57,6 @@ public class PlayerAnchorAimState : PlayerState
         aimBufferTimer = 0f;
 
         // 生成轨迹预览点
-        SpawnTrajectoryDots();
 
         player.anim?.Play("aim");
         Debug.Log("[PlayerAnchorAimState] 进入瞄准状态");
@@ -71,15 +66,18 @@ public class PlayerAnchorAimState : PlayerState
     {
         aimBufferTimer += Time.deltaTime;
 
-        // 缓冲期内不检测状态切换
+        UpdateAimDirection();
+        UpdateCurrentForce();
+        UpdateTrajectory();
+
+        // 检测发射/取消（每帧检测，不受缓冲限制，防止漏掉 GetButtonUp）
+        CheckLaunchInput();
+
+        // 缓冲期过后才检测其他状态切换
         if (aimBufferTimer >= aimBufferTime)
         {
             base.OnUpdate();
         }
-
-        UpdateAimDirection();
-        UpdateCurrentForce();
-        UpdateTrajectory();
     }
 
     public override void OnExit()
@@ -90,6 +88,25 @@ public class PlayerAnchorAimState : PlayerState
         ClearTrajectoryDots();
 
         Debug.Log("[PlayerAnchorAimState] 退出瞄准状态");
+    }
+
+    /// <summary>
+    /// 检测发射和取消输入 —— 不受缓冲限制，防止漏帧。
+    /// </summary>
+    private void CheckLaunchInput()
+    {
+        // 松开左键时抛出锚
+        if (Input.GetButtonUp("Fire1"))
+        {
+            stateMachine.ChangeState(new PlayerAnchorLaunchState(stateMachine, player, aimDirection, currentForce));
+            return;
+        }
+
+        // 按 Escape 取消瞄准
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            stateMachine.ChangeState(new PlayerIdleState(stateMachine, player));
+        }
     }
 
     /// <summary>
@@ -128,30 +145,21 @@ public class PlayerAnchorAimState : PlayerState
     }
 
     /// <summary>
-    /// 生成轨迹预览点 —— 从 player.aimdot 实例化一排点。
-    /// </summary>
-    private void SpawnTrajectoryDots()
-    {
-        if (player.aimdot == null)
-        {
-            Debug.LogWarning("[PlayerAnchorAimState] player.aimdot 未设置，无法显示轨迹预览。");
-            return;
-        }
-
-        trajectoryDots = new GameObject[TrajectoryDotCount];
-        for (int i = 0; i < TrajectoryDotCount; i++)
-        {
-            trajectoryDots[i] = Object.Instantiate(player.aimdot, player.transform.position, Quaternion.identity);
-            trajectoryDots[i].SetActive(true);
-        }
-    }
-
-    /// <summary>
-    /// 每帧更新轨迹点位置 —— 根据当前瞄准方向和蓄力时间计算抛物线。
+    /// 生成并更新轨迹预览点 —— 首次调用时生成，之后每帧根据鼠标位置更新抛物线。
     /// </summary>
     private void UpdateTrajectory()
     {
-        if (trajectoryDots == null) return;
+        if (player.aimdot == null) return;
+
+        // 首次生成轨迹点
+        if (trajectoryDots == null)
+        {
+            trajectoryDots = new GameObject[TrajectoryDotCount];
+            for (int i = 0; i < TrajectoryDotCount; i++)
+            {
+                trajectoryDots[i] = Object.Instantiate(player.aimdot, player.transform.position, Quaternion.identity);
+            }
+        }
 
         // 根据当前力度计算初速度
         Vector2 initialVelocity = aimDirection * currentForce;
@@ -205,24 +213,7 @@ public class PlayerAnchorAimState : PlayerState
 
     protected override void HandleTransition()
     {
-        // 松开左键时抛出锚
-        launchPressed = Input.GetButtonUp("Fire1");
-
-        // 按 Escape 取消瞄准
-        cancelPressed = Input.GetKeyDown(KeyCode.Escape);
-
-        if (launchPressed)
-        {
-            stateMachine.ChangeState(new PlayerAnchorLaunchState(stateMachine, player, aimDirection, currentForce));
-            return;
-        }
-
-        if (cancelPressed)
-        {
-            // 取消瞄准，返回静止状态
-            stateMachine.ChangeState(new PlayerIdleState(stateMachine, player));
-            return;
-        }
+        // 发射/取消逻辑已移至 CheckLaunchInput()，此处保留以供后续扩展
     }
 
     /// <summary>获取当前瞄准方向（供外部读取）</summary>
