@@ -107,10 +107,10 @@ public class PlayerAnchorLaunchState : PlayerState
 
         anchorRb.gravityScale = anchorGravityScale;
         anchorRb.velocity = launchDirection * actualLaunchForce;
-        anchorRb.angularVelocity = 360f * Mathf.Sign(launchDirection.x);
 
-        Debug.Log($"[PlayerAnchorLaunchState] 锚已发射！方向: {launchDirection}, 力度: {actualLaunchForce}");
-
+        // 锚的朝向跟随速度方向
+        // float angle = Mathf.Atan2(anchorRb.velocity.y, anchorRb.velocity.x) * Mathf.Rad2Deg;
+        // launchedAnchor.transform.rotation = Quaternion.Euler(0f, 0f, angle);
         hasLaunched = true;
     }
 
