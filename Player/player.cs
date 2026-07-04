@@ -9,6 +9,8 @@ public class player : MonoBehaviour
     public Rigidbody2D rb{ get; private set;}
     public CapsuleCollider2D cap{ get; private set;}
     public Animator anim{ get; private set;}
+    public GameObject anchor;
+    public GameObject aimdot;
 
     void Start()
     {
