@@ -31,10 +31,10 @@ public class PlayerMoveState : PlayerState
 
         // 获取输入方向
         moveInputX = Input.GetAxisRaw("Horizontal");
-        moveDirection = new Vector2(moveInputX, player.rb.velocity.y).normalized;
+        moveDirection = new Vector2(moveInputX, 0f).normalized;
 
-        // 应用移动
-        player.rb.velocity = moveDirection * moveSpeed;
+        // 应用水平移动，保持垂直速度不变（让重力/跳跃自然处理）
+        player.rb.velocity = new Vector2(moveDirection.x * moveSpeed, player.rb.velocity.y);
     }
 
     public override void OnExit()
@@ -54,8 +54,8 @@ public class PlayerMoveState : PlayerState
             return;
         }
 
-        // 检测瞄准输入（右键进入瞄准）
-        if (Input.GetButtonDown("Fire2"))
+        // 按住左键进入瞄准
+        if (Input.GetButton("Fire1"))
         {
             stateMachine.ChangeState(new PlayerAnchorAimState(stateMachine, player));
             return;
