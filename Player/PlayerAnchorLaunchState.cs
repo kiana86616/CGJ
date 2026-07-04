@@ -1,26 +1,33 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 扔锚-发射状态 —— 用 AnchorChain 系统向瞄准方向伸出锁链。
-/// 条件：发射后立即返回静止/移动状态，锁链独立运作。
+/// 扔锚-发射状态 —— 向瞄准方向投掷锚。
+/// 条件：发射后短暂停留，锚飞行结束 → 返回静止状态
 /// </summary>
 public class PlayerAnchorLaunchState : PlayerState
 {
+    // 锚的飞行参数
+    [SerializeField] private float anchorGravityScale = 1.5f;
+
+    private GameObject launchedAnchor;
+
     // 发射数据
     private Vector2 launchDirection;
-    private float maxChainLength;
+    private float actualLaunchForce;
 
-    // 发射后的微小缓冲（防止同帧再次触发瞄准）
-    private const float LaunchBuffer = 0.1f;
+    // 发射后的冷却时间
+    private float launchDuration = 0.5f;
     private float launchTimer;
+
+    // 是否已完成发射
     private bool hasLaunched;
 
     public PlayerAnchorLaunchState(PlayerStateMachine stateMachine, player player, Vector2 direction, float launchForce)
         : base(stateMachine, player, "AnchorLaunch")
     {
-        launchDirection = direction.normalized;
-        // 将力度映射为锁链最大长度（力度 5~18 → 长度 5~18）
-        maxChainLength = launchForce;
+        this.launchDirection = direction.normalized;
+        this.actualLaunchForce = launchForce;
     }
 
     public override void OnEnter()
@@ -30,8 +37,8 @@ public class PlayerAnchorLaunchState : PlayerState
         hasLaunched = false;
         launchTimer = 0f;
 
-        if (player.anim != null)
-            player.anim.Play("launch");
+        // 播放发射动画
+        player.anim?.Play("launch");
 
         // 翻转角色朝向发射方向
         if (launchDirection.x != 0)
@@ -43,16 +50,19 @@ public class PlayerAnchorLaunchState : PlayerState
             );
         }
 
-        LaunchChain();
+        // 执行发射
+        LaunchAnchor();
 
-        Debug.Log($"[PlayerAnchorLaunchState] 进入发射状态，方向: {launchDirection}，链长: {maxChainLength}");
+        Debug.Log($"[PlayerAnchorLaunchState] 进入发射状态，方向: {launchDirection}");
     }
 
     public override void OnUpdate()
     {
         base.OnUpdate();
 
+        // 发射后的短暂停留
         if (!hasLaunched) return;
+
         launchTimer += Time.deltaTime;
     }
 
@@ -60,6 +70,7 @@ public class PlayerAnchorLaunchState : PlayerState
     {
         base.OnFixedUpdate();
 
+        // 发射期间保持静止
         if (!hasLaunched)
         {
             player.rb.velocity = Vector2.zero;
@@ -73,9 +84,9 @@ public class PlayerAnchorLaunchState : PlayerState
     }
 
     /// <summary>
-    /// 用 AnchorChain 系统发射锁链 —— 实例化锚预制体，调用 Launch。
+    /// 发射锚 —— 从 player.anchor 获取预制体，生成实例并传入发射数据。
     /// </summary>
-    private void LaunchChain()
+    private void LaunchAnchor()
     {
         if (player.anchor == null)
         {
@@ -84,26 +95,22 @@ public class PlayerAnchorLaunchState : PlayerState
             return;
         }
 
-        // 清理旧链
-        player.ClearActiveChain();
+        Vector3 spawnPosition = player.transform.position + (Vector3)(launchDirection * 0.5f);
+        launchedAnchor = Object.Instantiate(player.anchor, spawnPosition, Quaternion.identity);
 
-        // 实例化锚预制体（应挂有 AnchorChain 组件）
-        Vector3 spawnPos = player.transform.position;
-        GameObject anchorObj = Object.Instantiate(player.anchor, spawnPos, Quaternion.identity);
-
-        AnchorChain chain = anchorObj.GetComponent<AnchorChain>();
-        if (chain == null)
+        // 获取或添加 Rigidbody2D，传入发射数据
+        Rigidbody2D anchorRb = launchedAnchor.GetComponent<Rigidbody2D>();
+        if (anchorRb == null)
         {
-            Debug.LogError("[PlayerAnchorLaunchState] 锚预制体缺少 AnchorChain 组件！");
-            Object.Destroy(anchorObj);
-            hasLaunched = true;
-            return;
+            anchorRb = launchedAnchor.AddComponent<Rigidbody2D>();
         }
 
-        // 用 AnchorChain 接管后续逻辑
-        player.activeChain = chain;
-        chain.Launch(spawnPos, launchDirection, player, maxChainLength);
+        anchorRb.gravityScale = anchorGravityScale;
+        anchorRb.velocity = launchDirection * actualLaunchForce;
 
+        // 锚的朝向跟随速度方向
+        // float angle = Mathf.Atan2(anchorRb.velocity.y, anchorRb.velocity.x) * Mathf.Rad2Deg;
+        // launchedAnchor.transform.rotation = Quaternion.Euler(0f, 0f, angle);
         hasLaunched = true;
     }
 
@@ -111,9 +118,10 @@ public class PlayerAnchorLaunchState : PlayerState
     {
         if (!hasLaunched) return;
 
-        // 发射后短暂缓冲，然后返回静止或移动
-        if (launchTimer >= LaunchBuffer)
+        // 发射后等待短暂冷却，然后返回静止或移动状态
+        if (launchTimer >= launchDuration)
         {
+            // 检查是否有移动输入来决定返回哪个状态
             float moveX = Input.GetAxisRaw("Horizontal");
             float moveY = Input.GetAxisRaw("Vertical");
 
