@@ -45,8 +45,7 @@ public class player : MonoBehaviour
     }
     public bool IsGrounded()
     {
-        return Physics2D.Raycast(groundcheck.transform.position, Vector2.down, checkdistance,groundlayer);
-        
-         
+        // Debug.Log("IsGrounded");
+        return Physics2D.Raycast(groundcheck.position, Vector2.down, checkdistance,groundlayer);
     }
 }
