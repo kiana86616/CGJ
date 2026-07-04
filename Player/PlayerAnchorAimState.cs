@@ -34,6 +34,7 @@ public class PlayerAnchorAimState : PlayerState
     private GameObject[] trajectoryDots;
     private const int TrajectoryDotCount = 12;
     private const float TrajectoryTimeStep = 0.08f;
+    
 
     public PlayerAnchorAimState(PlayerStateMachine stateMachine, player player)
         : base(stateMachine, player, "AnchorAim")
