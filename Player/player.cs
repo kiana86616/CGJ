@@ -40,12 +40,33 @@ public class player : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (groundcheck == null) return;
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(groundcheck.transform.position, transform.position + Vector3.down * checkdistance);
+        Gizmos.DrawLine(groundcheck.position, transform.position + Vector3.down * checkdistance);
     }
     public bool IsGrounded()
     {
         // Debug.Log("IsGrounded");
         return Physics2D.Raycast(groundcheck.position, Vector2.down, checkdistance,groundlayer);
+    }
+
+    /// <summary>当前激活的锁链引用</summary>
+    public AnchorChain activeChain;
+
+    /// <summary>锚挂住平台后，开始拉拽玩家</summary>
+    public void StartAnchorPull(Vector2 attachPoint, Collider2D platformCollider)
+    {
+        Debug.Log($"[player] 锚已挂住 {platformCollider.name}，开始拉拽");
+        // TODO: 实现拉拽逻辑（向 attachPoint 施加力/移动）
+    }
+
+    /// <summary>锁链完全收回后清理引用</summary>
+    public void ClearActiveChain()
+    {
+        if (activeChain != null)
+        {
+            Destroy(activeChain.gameObject);
+            activeChain = null;
+        }
     }
 }
