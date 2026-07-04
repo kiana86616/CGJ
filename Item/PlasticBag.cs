@@ -6,6 +6,6 @@ public class PlasticBag : ItemData
 {
     public override void useitem()
     {
-        PlayerManager.Instance.player.GetComponent<Rigidbody2D>().gravityScale = 0.5f;
+        PlayerManager.Instance.player.GetComponent<Rigidbody2D>().gravityScale *= 0.5f;
     }
 }
