@@ -90,11 +90,11 @@ public class PlayerAnchorAimState : PlayerState
 
     protected override void HandleTransition()
     {
-        // 检测发射输入（左键 / Fire1）
-        launchPressed = Input.GetButtonDown("Fire1");
+        // 松开左键时抛出锚
+        launchPressed = Input.GetButtonUp("Fire1");
 
-        // 检测取消输入（右键 / Fire2 再次按下，或 Escape）
-        cancelPressed = Input.GetButtonDown("Fire2") || Input.GetKeyDown(KeyCode.Escape);
+        // 按 Escape 取消瞄准
+        cancelPressed = Input.GetKeyDown(KeyCode.Escape);
 
         if (launchPressed)
         {
