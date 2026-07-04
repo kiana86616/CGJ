@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< Updated upstream:Player/player.cs.meta
 guid: bda106910a0ec4b459e9b5da941ca6b4
+=======
+guid: 47e738511c00b104d8f7788529b84463
+>>>>>>> Stashed changes:Script/player.cs.meta
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
