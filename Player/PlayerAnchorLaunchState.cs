@@ -8,15 +8,13 @@ using UnityEngine;
 public class PlayerAnchorLaunchState : PlayerState
 {
     // 锚的飞行参数
-    [SerializeField] private float launchForce = 12f;
     [SerializeField] private float anchorGravityScale = 1.5f;
 
-    // 锚预制体引用
-    private GameObject anchorPrefab;
     private GameObject launchedAnchor;
 
-    // 发射方向
+    // 发射数据
     private Vector2 launchDirection;
+    private float actualLaunchForce;
 
     // 发射后的冷却时间
     private float launchDuration = 0.5f;
@@ -25,10 +23,11 @@ public class PlayerAnchorLaunchState : PlayerState
     // 是否已完成发射
     private bool hasLaunched;
 
-    public PlayerAnchorLaunchState(PlayerStateMachine stateMachine, player player, Vector2 direction)
+    public PlayerAnchorLaunchState(PlayerStateMachine stateMachine, player player, Vector2 direction, float launchForce)
         : base(stateMachine, player, "AnchorLaunch")
     {
         this.launchDirection = direction.normalized;
+        this.actualLaunchForce = launchForce;
     }
 
     public override void OnEnter()
@@ -85,38 +84,21 @@ public class PlayerAnchorLaunchState : PlayerState
     }
 
     /// <summary>
-    /// 发射锚 —— 从玩家位置向瞄准方向发射一个锚投射物。
-    /// 如果未设置 prefab，则动态创建一个测试用的锚对象。
+    /// 发射锚 —— 从 player.anchor 获取预制体，生成实例并传入发射数据。
     /// </summary>
     private void LaunchAnchor()
     {
-        // 尝试从 Resources 加载锚预制体
-        anchorPrefab = Resources.Load<GameObject>("Prefabs/Anchor");
-
-        Vector3 spawnPosition = player.transform.position + (Vector3)(launchDirection * 1f);
-
-        if (anchorPrefab != null)
+        if (player.anchor == null)
         {
-            launchedAnchor = Object.Instantiate(anchorPrefab, spawnPosition, Quaternion.identity);
-        }
-        else
-        {
-            // 回退：动态创建一个临时锚对象用于测试
-            launchedAnchor = new GameObject("Anchor_Temp");
-            launchedAnchor.transform.position = spawnPosition;
-            launchedAnchor.tag = "Anchor";
-
-            // 添加 SpriteRenderer
-            SpriteRenderer sr = launchedAnchor.AddComponent<SpriteRenderer>();
-            sr.sprite = Resources.Load<Sprite>("Sprites/Anchor");
-            sr.color = Color.gray;
-
-            // 添加碰撞体
-            CircleCollider2D col = launchedAnchor.AddComponent<CircleCollider2D>();
-            col.radius = 0.3f;
+            Debug.LogError("[PlayerAnchorLaunchState] player.anchor 未设置！请在 player 上配置锚预制体。");
+            hasLaunched = true;
+            return;
         }
 
-        // 添加刚体并施加力
+        Vector3 spawnPosition = player.transform.position + (Vector3)(launchDirection * 0.5f);
+        launchedAnchor = Object.Instantiate(player.anchor, spawnPosition, Quaternion.identity);
+
+        // 获取或添加 Rigidbody2D，传入发射数据
         Rigidbody2D anchorRb = launchedAnchor.GetComponent<Rigidbody2D>();
         if (anchorRb == null)
         {
@@ -124,12 +106,10 @@ public class PlayerAnchorLaunchState : PlayerState
         }
 
         anchorRb.gravityScale = anchorGravityScale;
-        anchorRb.velocity = launchDirection * launchForce;
-
-        // 给锚添加旋转效果
+        anchorRb.velocity = launchDirection * actualLaunchForce;
         anchorRb.angularVelocity = 360f * Mathf.Sign(launchDirection.x);
 
-        Debug.Log($"[PlayerAnchorLaunchState] 锚已发射！速度: {launchDirection * launchForce}");
+        Debug.Log($"[PlayerAnchorLaunchState] 锚已发射！方向: {launchDirection}, 力度: {actualLaunchForce}");
 
         hasLaunched = true;
     }
