@@ -11,6 +11,12 @@ public class player : MonoBehaviour
     public Animator anim{ get; private set;}
     public GameObject anchor;
     public GameObject aimdot;
+    public Transform groundcheck;
+    public float checkdistance = 2f;
+    public LayerMask groundlayer;
+
+    // 当前脚下地面的信息
+    private RaycastHit2D groundHit;
 
     void Start()
     {
@@ -30,5 +36,17 @@ public class player : MonoBehaviour
     void FixedUpdate()
     {
         stateMachine?.FixedUpdate();
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(groundcheck.transform.position, transform.position + Vector3.down * checkdistance);
+    }
+    public bool IsGrounded()
+    {
+        return Physics2D.Raycast(groundcheck.transform.position, Vector2.down, checkdistance,groundlayer);
+        
+         
     }
 }
