@@ -21,7 +21,8 @@ public class PlayerMoveState : PlayerState
     public override void OnEnter()
     {
         base.OnEnter();
-        player.anim?.Play("move");
+        if (player.anim != null)
+            player.anim.Play("move");
         Debug.Log("[PlayerMoveState] 进入移动状态");
     }
 
